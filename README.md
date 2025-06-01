@@ -15,39 +15,219 @@
 - 너무 큰 디렉토리 전체를 한 번에 읽으려 하기
 - 바이너리 파일(.class, .jar) 읽으려 하기
 
-🔑 Notion API Authentication 설정 방법
-1. Notion Integration 생성
-Notion 개발자 페이지 접속:
-* https://www.notion.so/my-integrations 에 접속
-* Notion 계정으로 로그인
-* "New integration" 버튼 클릭
+🔑 **Notion API Authentication 설정 가이드**
 
-Integration 설정:
-* Name: MCP Server Integration (원하는 이름)
-* Logo: (선택사항)
-* Associated workspace: 사용할 워크스페이스 선택
+**1️⃣ Notion Integration 생성**
 
-Integration Token 생성  
-토큰 복사:
-* Integration을 생성하면 "Internal Integration Token" 생성됨
-* ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX 형태의 토큰
-* 이 토큰을 복사해서 claude_desktop_config.json 에 입력
+```bash
+# 단계별 가이드
+1. Notion 개발자 페이지 접속
+   └─ https://www.notion.so/my-integrations
+
+2. 새 Integration 생성
+   └─ "New integration" 클릭
+   └─ Basic information 입력
+```
+
+**Integration 설정 세부사항:**
+- **Name**: `MCP Server Integration` (또는 프로젝트명)
+- **Associated workspace**: 사용할 워크스페이스 선택
+- **Capabilities**: 
+  - ✅ Read content
+  - ✅ Update content  
+  - ✅ Insert content
+  - ❌ No user information (보안상 비활성화 권장)
+
+**2️⃣ API Token 생성 및 관리**
+
+```bash
+# Token 형태 예시
+ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+**🔐 보안 Best Practices:**
+- Token을 환경변수로 관리 (`NOTION_API_TOKEN`)
+- `.env` 파일 사용 시 `.gitignore`에 포함
+- 프로덕션 환경에서는 Secret Manager 사용
+
+**3️⃣ Claude Desktop 설정**
+
 ```json
 {
   "mcpServers": {
     "notionApi": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@notionhq/notion-mcp-server"
-      ],
+      "args": ["-y", "@notionhq/notion-mcp-server"],
       "env": {
-        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ntn_XXX\", \"Notion-Version\": \"2022-06-28\" }"
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ntn_YOUR_TOKEN_HERE\", \"Notion-Version\": \"2022-06-28\"}"
       }
     }
   }
 }
 ```
+
+**4️⃣ 페이지 권한 설정**
+
+Notion에서 Integration이 접근할 페이지/데이터베이스마다:
+```bash
+1. 페이지 우상단 "..." 메뉴 클릭
+2. "Add connections" 선택  
+3. 생성한 Integration 선택
+4. "Confirm" 클릭
+```
+
+**5️⃣ 연결 테스트**
+
+```bash
+# MCP 서버 테스트 방법
+1. Claude Desktop 재시작
+2. 새 대화에서 Notion 관련 명령어 실행
+3. "List my Notion pages" 또는 "Show my databases" 시도
+```
+
+**⚠️ 트러블슈팅**
+
+| 문제 | 해결방법 |
+|------|----------|
+| `401 Unauthorized` | Token 재확인, 페이지 권한 설정 확인 |
+| `403 Forbidden` | Integration이 해당 페이지에 권한이 없음 |
+| `Connection refused` | Claude Desktop 재시작 필요 |
+| `MCP server not found` | npm 캐시 정리: `npm cache clean --force` |
+
+---
+
+🐙 **GitHub MCP Server 설정 가이드**
+
+**1️⃣ GitHub Personal Access Token 생성**
+
+```bash
+# GitHub Token 생성 단계
+1. GitHub 로그인 후 Settings 접속
+   └─ https://github.com/settings/tokens
+
+2. Personal access tokens 선택
+   └─ "Tokens (classic)" 또는 "Fine-grained tokens" 선택
+   └─ "Generate new token" 클릭
+```
+
+**권한 설정 (Scopes):**
+- **Classic Token 권한:**
+  - ✅ `repo` - 전체 저장소 접근
+  - ✅ `read:org` - 조직 정보 읽기
+  - ✅ `read:user` - 사용자 정보 읽기
+  - ✅ `user:email` - 이메일 주소 접근
+  - ✅ `notifications` - 알림 관리
+  - ✅ `write:discussion` - 토론 작성
+
+- **Fine-grained Token 권한:**
+  - ✅ Contents: Read and write
+  - ✅ Issues: Read and write  
+  - ✅ Pull requests: Read and write
+  - ✅ Metadata: Read
+
+**2️⃣ Token 보안 관리**
+
+```bash
+# Token 형태 예시
+# Classic: ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+# Fine-grained: github_pat_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+**🔐 보안 Best Practices:**
+- Token 만료 기간 설정 (최대 1년)
+- 환경변수로 관리 (`GITHUB_TOKEN`)
+- Repository별 세분화된 권한 부여
+- 정기적인 Token 순환(Rotation)
+
+**3️⃣ Claude Desktop 설정**
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "your_github_token_here"
+      }
+    }
+  }
+}
+```
+
+**4️⃣ MCP Server 기능별 활용**
+
+**📊 Repository 관리:**
+```bash
+# 활용 예시
+- "List my repositories"
+- "Show recent commits in [repo-name]"
+- "Create a new repository named [name]"
+- "Search repositories with [keyword]"
+```
+
+**🔍 Issue & PR 관리:**
+```bash
+# Issue 관리
+- "List open issues in [repo]"
+- "Create an issue in [repo] with title [title]"
+- "Assign issue #123 to @username"
+
+# Pull Request 관리  
+- "List open PRs in [repo]"
+- "Review PR #456 in [repo]"
+- "Merge PR #789 with squash strategy"
+```
+
+**📈 Code Analysis:**
+```bash
+# 코드 분석
+- "Show file contents of [file-path] in [repo]"
+- "Search for [pattern] in [repo] codebase"
+- "List recent changes in [directory]"
+```
+
+**5️⃣ 고급 설정 및 최적화**
+
+**멀티 계정 설정:**
+```json
+{
+  "mcpServers": {
+    "github-personal": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "personal_token",
+        "GITHUB_API_URL": "https://api.github.com"
+      }
+    },
+    "github-enterprise": {
+      "command": "npx", 
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "enterprise_token",
+        "GITHUB_API_URL": "https://api.github.enterprise.com"
+      }
+    }
+  }
+}
+```
+
+**⚠️ 트러블슈팅**
+
+| 문제 | 해결방법 |
+|------|----------|
+| `401 Bad credentials` | Token 재확인, 권한 스코프 점검 |
+| `403 rate limit exceeded` | Token 사용량 확인, 여러 Token 로테이션 |
+| `404 Not Found` | Repository 접근 권한 확인 |
+| `422 Validation failed` | 입력 데이터 형식 검증 |
+| `Server connection failed` | GitHub API 상태 확인, 네트워크 점검 |
+
+**🔧 성능 최적화 팁:**
+- GraphQL API 활용으로 필요한 데이터만 조회
+- Webhook 설정으로 실시간 업데이트 구현
+- 캐싱 전략으로 API 호출 최소화
+- Batch 요청으로 다중 작업 효율화
 
 ---
 

@@ -15,6 +15,40 @@
 - 너무 큰 디렉토리 전체를 한 번에 읽으려 하기
 - 바이너리 파일(.class, .jar) 읽으려 하기
 
+🔑 Notion API Authentication 설정 방법
+1. Notion Integration 생성
+Notion 개발자 페이지 접속:
+* https://www.notion.so/my-integrations 에 접속
+* Notion 계정으로 로그인
+* "New integration" 버튼 클릭
+
+Integration 설정:
+* Name: MCP Server Integration (원하는 이름)
+* Logo: (선택사항)
+* Associated workspace: 사용할 워크스페이스 선택
+
+Integration Token 생성  
+토큰 복사:
+* Integration을 생성하면 "Internal Integration Token" 생성됨
+* ntn_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX 형태의 토큰
+* 이 토큰을 복사해서 claude_desktop_config.json 에 입력
+```json
+{
+  "mcpServers": {
+    "notionApi": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "OPENAPI_MCP_HEADERS": "{\"Authorization\": \"Bearer ntn_XXX\", \"Notion-Version\": \"2022-06-28\" }"
+      }
+    }
+  }
+}
+```
+
 ---
 
 ## 🚀 바이브 코딩 완전 가이드
